@@ -18,6 +18,7 @@ from base64 import b64encode
 import json
 import os
 import sys
+import pickle
 
 COMMENT_CHAR = '#'
 OPTION_CHAR =  '='
@@ -55,6 +56,11 @@ else:
   print "destdir not specified in .sncatrc: Quitting."
   sys.exit()
 
+if options.has_key('pickleFile'):
+  pickleFile = options['pickleFile']
+
+destdir = os.path.expanduser(options['destdir'])
+
 # Get my authorization token for later calls.
 loginURL = 'https://simple-note.appspot.com/api/login'
 creds = b64encode('email=%s&password=%s' % (options['email'], options['password']))
@@ -62,23 +68,53 @@ login = urlopen(loginURL, creds)
 token = login.readline().rstrip()
 login.close()
 
-# Get the note index.
+# Get the current note index.
 indexURL = 'https://simple-note.appspot.com/api/index?auth=%s&email=%s' % (token, options['email'])
 index = urlopen(indexURL)
-noteList = json.load(index)
+newNoteList = json.load(index)
 
-baseURL = 'https://simple-note.appspot.com/api/note?key=%s&auth=%s&email=%s'
-destdir = os.path.expanduser(options['destdir'])
-for i in noteList:
-  if i['deleted'] == True:
+# Get the previous note index
+oldNoteList = []
+pickleFile = destdir + '/.notelist.pkl'
+if os.path.isfile(pickleFile):
+  input = open(pickleFile,'rb')
+  oldNoteList = pickle.load(input)
+  input.close()
+
+# Get change list
+changedNotes = []
+for newNote in newNoteList:
+  # Not going to pull down deleted notes
+  if newNote['deleted'] == True:
     continue
+  if len(oldNoteList) == 0:
+    # Put all non-deleted notes in new list
+    changedNotes.append(newNote)
+  else:
+    # Test timestamp
+    for oldNote in oldNoteList:
+      if oldNote['key'] == newNote['key']:
+        if oldNote['modify'] < newNote['modify']:
+          changedNotes.append(newNote)
+        break
+
+
+# Retrieved changed notes
+baseURL = 'https://simple-note.appspot.com/api/note?key=%s&auth=%s&email=%s'
+for i in changedNotes:
   noteURL = baseURL % (i['key'], token, options['email'])
   note = urlopen(noteURL).read().decode('utf-8').rstrip()
   encoded = '\n'.join(note.split('\n')[1:]).encode('utf-8')
   title = note.split('\n')[0].rstrip()
-  print 'Title:    %s Modified: %s Deleted:  %s'  % (title, i['modify'], i['deleted'])
+  print 'Downloading Title:    %s Modified: %s'  % (title, i['modify'])
   target = open (destdir + '/' + title, 'w')
   print>>target, encoded
   target.close()
 
+# TODO: Delete deleted notes
+# Caution: notes with same names but different keys might be erroneously deleted! Think on this.
 
+# Save new notelist
+output = open(pickleFile, 'wb')
+pickle.dump(newNoteList, output)
+output.close()

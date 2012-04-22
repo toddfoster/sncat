@@ -16,21 +16,23 @@ Done
 - don't save first line (use as filename)
 - don't save deleted notes
 - check for minimum requied options (email, password, destdir?)
+- keep notes data; only update changed notes
 
 TODO
 -------
-- keep notes data; only update changed notes
-- after each run commit to git
-- delete deleted notes
-- Find a systematic way to designate notes with special scripts
-   o update website based on changed textile sources
+- delete deleted notes: beware notes with same names but different keys!
 - allow specification of alternate .sncatrc or override values via command line arguments
-- better structure: divide into functions
 - support unicode in titles -> filenames
 
 Someday
 --------
 - two-way syncing
+
+Not to do (external to this script)
+--------
+- after each run commit to git
+- Find a systematic way to designate notes with special scripts
+   o update website based on changed textile sources
 
 Credits
 -------
