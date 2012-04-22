@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+
+# sncat: simplenote cat
+# Todd Foster, begun 21 April 2012
+#
+# Gets email, password from ~/.sncatrc with one per line: email = my_email@suremail.info
+#
+# TODO
+# x save credentials / config elsewhere
+# x save all files
+# x don't save first line (use as filename)
+# x don't save deleted notes
+# o keep notes data; only update changed notes
+# o after each run commit to git
+# o delete deleted notes
+# o Find a systematic way to designate notes with special scripts
+#    o update website based on changed textile sources
+# o allow specification of alternate .sncatrc or override values via command line arguments
+# o check for minimum requied options (email, password, destdir?)
+# o better structure: divide into functions
+# o support unicode in titles -> filenames
+#
+# Someday
+# o two-way syncing
+#
+# Starting point: http://www.leancrew.com/all-this/2010/01/exploring-the-simplenote-api/
+#   I completely relied on this to get what I wanted out of simplenote
+# Similar idea to what I'm thinking, but in perl: http://ping13.net/hacks/snwatch/
+# Another similar idea, also in perl: https://github.com/fletcher/SimplenoteSync
+# Config parser lifted from: http://www.decalage.info/en/python/configparser
+#
+
+from urllib import urlopen        # standard Python library
+from base64 import b64encode      # standard Python library
+import json
+import os
+import sys
+
+COMMENT_CHAR = '#'
+OPTION_CHAR =  '='
+def parse_config(filename):
+    options = {}
+    f = open(os.path.expanduser(filename))
+    for line in f:
+        # First, remove comments:
+        if COMMENT_CHAR in line:
+            # split on comment char, keep only the part before
+            line, comment = line.split(COMMENT_CHAR, 1)
+        # Second, find lines with an option=value:
+        if OPTION_CHAR in line:
+            # split on option char:
+            option, value = line.split(OPTION_CHAR, 1)
+            # strip spaces:
+            option = option.strip()
+            value = value.strip()
+            # store in dictionary:
+            options[option] = value
+    f.close()
+    return options
+
+
+
+options = parse_config('~/.sncatrc')
+
+# TODO check for minimum required options
+
+if options.has_key('destdir') and options.has_key('password'):
+  print "Retrieving simplenote notes for " + options['email']
+else:
+  print "email or password not specified in .sncatrc: Quitting."
+  sys.exit()
+
+if options.has_key('destdir'):
+  print "Specified destdir = " + options['destdir']
+else:
+  print "destdir not specified in .sncatrc: Quitting."
+  sys.exit()
+
+# Get my authorization token for later calls.
+loginURL = 'https://simple-note.appspot.com/api/login'
+creds = b64encode('email=%s&password=%s' % (options['email'], options['password']))
+login = urlopen(loginURL, creds)
+token = login.readline().rstrip()
+login.close()
+
+# Get the note index.
+indexURL = 'https://simple-note.appspot.com/api/index?auth=%s&email=%s' % (token, options['email'])
+index = urlopen(indexURL)
+noteList = json.load(index)
+
+baseURL = 'https://simple-note.appspot.com/api/note?key=%s&auth=%s&email=%s'
+destdir = os.path.expanduser(options['destdir'])
+for i in noteList:
+  if i['deleted'] == True:
+    continue
+  noteURL = baseURL % (i['key'], token, options['email'])
+  note = urlopen(noteURL).read().decode('utf-8').rstrip()
+  encoded = '\n'.join(note.split('\n')[1:]).encode('utf-8')
+  title = note.split('\n')[0].rstrip()
+  print 'Title:    %s Modified: %s Deleted:  %s'  % (title, i['modify'], i['deleted'])
+  target = open (destdir + '/' + title, 'w')
+  print>>target, encoded
+  target.close()
+
+
