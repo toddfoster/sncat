@@ -5,23 +5,6 @@
 #
 # Gets email, password from ~/.sncatrc with one per line: email = my_email@suremail.info
 #
-# TODO
-# x save credentials / config elsewhere
-# x save all files
-# x don't save first line (use as filename)
-# x don't save deleted notes
-# o keep notes data; only update changed notes
-# o after each run commit to git
-# o delete deleted notes
-# o Find a systematic way to designate notes with special scripts
-#    o update website based on changed textile sources
-# o allow specification of alternate .sncatrc or override values via command line arguments
-# o check for minimum requied options (email, password, destdir?)
-# o better structure: divide into functions
-# o support unicode in titles -> filenames
-#
-# Someday
-# o two-way syncing
 #
 # Starting point: http://www.leancrew.com/all-this/2010/01/exploring-the-simplenote-api/
 #   I completely relied on this to get what I wanted out of simplenote
@@ -30,8 +13,8 @@
 # Config parser lifted from: http://www.decalage.info/en/python/configparser
 #
 
-from urllib import urlopen        # standard Python library
-from base64 import b64encode      # standard Python library
+from urllib import urlopen
+from base64 import b64encode
 import json
 import os
 import sys
@@ -58,11 +41,7 @@ def parse_config(filename):
     f.close()
     return options
 
-
-
 options = parse_config('~/.sncatrc')
-
-# TODO check for minimum required options
 
 if options.has_key('destdir') and options.has_key('password'):
   print "Retrieving simplenote notes for " + options['email']
