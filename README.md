@@ -34,9 +34,9 @@ Someday
 
 Credits
 -------
-Starting point: http://www.leancrew.com/all-this/2010/01/exploring-the-simplenote-api/
+- Starting point: http://www.leancrew.com/all-this/2010/01/exploring-the-simplenote-api/
   I completely relied on this to get what I wanted out of simplenote
-Similar idea to what I'm thinking, but in perl: http://ping13.net/hacks/snwatch/
-Another similar idea, also in perl: https://github.com/fletcher/SimplenoteSync
-Config parser lifted from: http://www.decalage.info/en/python/configparser
+- Similar idea to what I'm thinking, but in perl: http://ping13.net/hacks/snwatch/
+- Another similar idea, also in perl: https://github.com/fletcher/SimplenoteSync
+- Config parser lifted from: http://www.decalage.info/en/python/configparser
 
