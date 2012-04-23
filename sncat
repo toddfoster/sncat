@@ -42,6 +42,12 @@ def parse_config(filename):
     f.close()
     return options
 
+def getNoteByKey(notes, key):
+  for note in notes:
+    if note['key'] == key:
+      return note
+  return None
+
 options = parse_config('~/.sncatrc')
 
 if options.has_key('destdir') and options.has_key('password'):
@@ -81,38 +87,34 @@ if os.path.isfile(pickleFile):
   oldNoteList = pickle.load(input)
   input.close()
 
-# Get change list
-changedNotes = []
-for newNote in newNoteList:
-  # Not going to pull down deleted notes
-  if newNote['deleted'] == True:
-    continue
-  if len(oldNoteList) == 0:
-    # Put all non-deleted notes in new list
-    changedNotes.append(newNote)
-  else:
-    # Test timestamp
-    for oldNote in oldNoteList:
-      if oldNote['key'] == newNote['key']:
-        if oldNote['modify'] < newNote['modify']:
-          changedNotes.append(newNote)
-        break
-
-
-# Retrieved changed notes
+# Retrieve changed notes, delete newly deleted notes
 baseURL = 'https://simple-note.appspot.com/api/note?key=%s&auth=%s&email=%s'
-for i in changedNotes:
+titles = []
+for i in newNoteList:
+  oldNote = getNoteByKey(oldNoteList, i['key'])
+
+  # If file was already deleted, ignore
+  if i['deleted'] == True:
+    if oldNote is None: continue
+    if oldNote['deleted'] == True: continue
+
+  # Get info about note
   noteURL = baseURL % (i['key'], token, options['email'])
   note = urlopen(noteURL).read().decode('utf-8').rstrip()
   encoded = '\n'.join(note.split('\n')[1:]).encode('utf-8')
   title = note.split('\n')[0].rstrip()
-  print 'Downloading Title:    %s Modified: %s'  % (title, i['modify'])
-  target = open (destdir + '/' + title, 'w')
-  print>>target, encoded
-  target.close()
+  path = destdir + '/' + title
 
-# TODO: Delete deleted notes
-# Caution: notes with same names but different keys might be erroneously deleted! Think on this.
+  # Only delete newly deleted notes
+  if i['deleted'] == True:
+    print 'Removing Title: %s' % (title)
+    if os.path.isfile(path): os.remove(path)
+  elif i['modify'] > oldNote['modify'] or not os.path.isfile(path):
+    print 'Downloading Title: %s Modified: %s'  % (title, i['modify'])
+    titles.append(title)
+    target = open (path, 'w')
+    print>>target, encoded
+    target.close()
 
 # Save new notelist
 output = open(pickleFile, 'wb')
