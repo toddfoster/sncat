@@ -105,11 +105,13 @@ for i in newNoteList:
   title = note.split('\n')[0].rstrip()
   path = destdir + '/' + title
 
+  print '%s: %s' % (title, i)
+
   # Only delete newly deleted notes
   if i['deleted'] == True:
     print 'Removing Title: %s' % (title)
     if os.path.isfile(path): os.remove(path)
-  elif i['modify'] > oldNote['modify'] or not os.path.isfile(path):
+  elif oldNote is None or i['modify'] > oldNote['modify'] or not os.path.isfile(path):
     print 'Downloading Title: %s Modified: %s'  % (title, i['modify'])
     titles.append(title)
     target = open (path, 'w')
