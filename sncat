@@ -105,7 +105,7 @@ for i in newNoteList:
   title = note.split('\n')[0].rstrip()
   path = destdir + '/' + title
 
-  print '%s: %s' % (title, i)
+  #print '%s: %s' % (title, i)
 
   # Only delete newly deleted notes
   if i['deleted'] == True:
