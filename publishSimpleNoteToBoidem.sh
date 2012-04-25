@@ -6,7 +6,11 @@ DEST="/home/whereMyRepoIs"
 # Update notes
 /home/foster/bin/sncat
 
-# Copy relevant notes
+# Update repo
+cd $DEST
+git pull
+
+# Copy relevant notes into repo
 cd $SRC
 for I in boidem.*
 do
@@ -19,6 +23,8 @@ do
     # Copy them to the git repo
     tail -n+2 $I > $DEST/$NAME
 done
+
+# Push repo
 cd $DEST
 git ci -a -m "Auto import from SimpleNote"
 # Uncomment the line below to go fully automatic! Then set up a cron job.
